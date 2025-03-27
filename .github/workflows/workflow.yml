@@ -14,10 +14,12 @@ env:
   APP_NAME: farm-goods
 
 jobs:
+  # -------------------------------------------------------------------
   # Job 1: develop
+  # -------------------------------------------------------------------
   test_and_build_develop:
     runs-on: ubuntu-latest
-    # รันเมื่อ push → develop หรือ PR → develop
+    # เงื่อนไข: รันเมื่อ push → develop หรือ PR → develop
     if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/develop') || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'develop') }}
 
     steps:
@@ -33,10 +35,12 @@ jobs:
       - name: Build Docker Image (Develop)
         run: docker build -t ${{ env.APP_NAME }}:develop .
 
+  # -------------------------------------------------------------------
   # Job 2: main
+  # -------------------------------------------------------------------
   build_and_release_main:
     runs-on: ubuntu-latest
-    # รันเฉพาะเมื่อ push เข้า main
+    # เงื่อนไข: รันเฉพาะเมื่อ push เข้า main (เช่น merge PR)
     if: ${{ github.ref == 'refs/heads/main' }}
 
     steps:
@@ -65,11 +69,14 @@ jobs:
           docker build -t "${IMAGE_NAME}" .
           docker push "${IMAGE_NAME}"
 
-      # สร้าง Release บน GitHub ด้วย tag เดียวกับ Docker image
+      # สร้าง Release บน GitHub ด้วย Tag เดียวกับ Docker image
       - name: Create Release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.versioning.outputs.VERSION }}
-          release_name: "Release ${{ steps.versioning.outputs.VERSION }}"
+          name: "Release ${{ steps.versioning.outputs.VERSION }}"
           draft: false
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
